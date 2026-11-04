@@ -16,5 +16,21 @@ Configure these settings manually in the repository's default branch. The reposi
 - Restrict who can bypass pull request requirements; keep bypass access minimal and audited.
 - Do not allow administrators to bypass these rules unless an emergency process is documented.
 
-Record the enabled settings and verification date in the Phase 1 evidence once the repository is configured.
+## Required status checks
 
+Require these checks on the default branch after the corresponding workflows are present:
+
+- `test`
+- `lint`
+- `hadolint`
+- `gitleaks`
+- `govulncheck`
+- `codeql`
+- `trivy-fs`
+- `trivy-image`
+- `sbom`
+- `workflow-lint`
+
+The `publish` workflow is restricted to the default branch and is not a pull-request merge requirement.
+
+Record the enabled settings and verification date in the Phase 1 evidence once the repository is configured.
