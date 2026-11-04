@@ -1,0 +1,8 @@
+# Replace this placeholder with the repository owner's GitHub handle.
+* @OWNER_GITHUB_USERNAME
+
+# Security-sensitive areas require the repository owner.
+/.github/ @OWNER_GITHUB_USERNAME
+/infra/ @OWNER_GITHUB_USERNAME
+/policies/ @OWNER_GITHUB_USERNAME
+
