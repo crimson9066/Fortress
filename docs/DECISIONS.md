@@ -20,3 +20,10 @@ This log records choices that affect security, reproducibility, operations, or p
 - **Alternatives:** Require AWS for every workflow; use a different local Kubernetes distribution; omit cloud infrastructure entirely.
 - **Consequences:** Local verification is accessible and avoids mandatory spend, but AWS-specific behavior requires separate validation. Any AWS phase must include least-privilege IAM, encryption, cost controls, and a manual destroy path.
 
+## ADR-002: Standard-library HTTP service with Prometheus instrumentation
+
+- **Status:** Accepted
+- **Context:** The portfolio workload should be small enough to audit while demonstrating production HTTP safety and observable SLO signals.
+- **Decision:** Use Go's standard-library `net/http` and `log/slog`, with `prometheus/client_golang` as the only external application dependency. Keep the item store in memory for this phase.
+- **Alternatives:** Use a web framework; add a database; use a different logging or metrics stack.
+- **Consequences:** The service has a small dependency and attack surface, but data is intentionally ephemeral and the API is not horizontally consistent until a persistence layer is planned and implemented.

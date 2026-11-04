@@ -5,12 +5,16 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type server struct {
@@ -18,14 +22,31 @@ type server struct {
 	store       *itemStore
 	maxBodySize int64
 	limiter     *rateLimiter
+	requests    *prometheus.CounterVec
+	duration    *prometheus.HistogramVec
+	metrics     http.Handler
 }
 
 func newServer(cfg config, logger *slog.Logger) *server {
+	requests := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "fortress_http_requests_total",
+		Help: "Total HTTP requests handled by Fortress.",
+	}, []string{"route", "status_class"})
+	duration := prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "fortress_http_request_duration_seconds",
+		Help:    "HTTP request duration in seconds.",
+		Buckets: prometheus.DefBuckets,
+	}, []string{"route", "status_class"})
+	registry := prometheus.NewRegistry()
+	registry.MustRegister(requests, duration)
 	return &server{
 		logger:      logger,
 		store:       &itemStore{},
 		maxBodySize: cfg.maxBodyBytes,
 		limiter:     newRateLimiter(cfg.rateLimit, cfg.rateWindow),
+		requests:    requests,
+		duration:    duration,
+		metrics:     promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
 	}
 }
 
@@ -33,6 +54,7 @@ func (s *server) handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.healthz)
 	mux.HandleFunc("GET /readyz", s.readyz)
+	mux.Handle("GET /metrics", s.metrics)
 	mux.HandleFunc("POST /v1/items", s.createItem)
 	mux.HandleFunc("GET /v1/items", s.listItems)
 	return mux
@@ -162,9 +184,49 @@ func (s *server) recoverPanic(next http.Handler) http.Handler {
 	})
 }
 
+type statusWriter struct {
+	http.ResponseWriter
+	status int
+}
+
+func (w *statusWriter) WriteHeader(status int) {
+	w.status = status
+	w.ResponseWriter.WriteHeader(status)
+}
+
+func (w *statusWriter) Write(body []byte) (int, error) {
+	if w.status == 0 {
+		w.WriteHeader(http.StatusOK)
+	}
+	return w.ResponseWriter.Write(body)
+}
+
+func (s *server) instrument(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		rw := &statusWriter{ResponseWriter: w}
+		defer func() {
+			route := r.Pattern
+			if route == "" {
+				route = "unmatched"
+			}
+			status := rw.status
+			if status == 0 {
+				status = http.StatusOK
+			}
+			statusClass := fmt.Sprintf("%dxx", status/100)
+			s.requests.WithLabelValues(route, statusClass).Inc()
+			s.duration.WithLabelValues(route, statusClass).Observe(time.Since(start).Seconds())
+			s.logger.Info("request completed", "request_id", requestID(r.Context()), "method", r.Method, "route", route, "status", status, "duration_ms", time.Since(start).Milliseconds())
+		}()
+		next.ServeHTTP(rw, r)
+	})
+}
+
 func (s *server) routes() http.Handler {
 	handler := s.handler()
 	handler = s.recoverPanic(handler)
+	handler = s.instrument(handler)
 	handler = s.rateLimit(handler)
 	handler = withRequestID(handler)
 	return s.securityHeaders(handler)
