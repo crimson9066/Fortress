@@ -21,7 +21,6 @@ type itemInput struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
-
 type item struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
@@ -86,4 +85,3 @@ func (s *itemStore) list() []item {
 	copy(result, s.items)
 	return result
 }
-

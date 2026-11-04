@@ -10,4 +10,3 @@ FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c
 COPY --from=build /out/fortress /fortress
 USER 65532:65532
 ENTRYPOINT ["/fortress"]
-

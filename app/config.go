@@ -13,7 +13,6 @@ type config struct {
 	rateWindow      time.Duration
 	shutdownTimeout time.Duration
 }
-
 func loadConfig() config {
 	return config{
 		addr:            envString("FORTRESS_ADDR", ":8080"),
@@ -46,4 +45,3 @@ func envDuration(key string, fallback time.Duration) time.Duration {
 	}
 	return value
 }
-
