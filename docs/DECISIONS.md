@@ -51,3 +51,11 @@ This log records choices that affect security, reproducibility, operations, or p
 - **Decision:** Create one GitHub OIDC provider and two roles. The plan role accepts only the exact repository pull-request subject. The apply role accepts only the exact protected `production` environment subject and an exact workflow reference on `refs/heads/main`. Both roles have a one-hour maximum session and receive permissions only through explicitly supplied policy ARNs.
 - **Alternatives:** Use access keys; trust the repository broadly; use wildcard branch or subject conditions; attach broad administrator permissions by default.
 - **Consequences:** Fork and branch credentials are constrained by immutable OIDC claims, but callers must explicitly provide the minimum managed policies needed for each Terraform stack.
+
+## ADR-006: EKS API authentication and node hardening
+
+- **Status:** Accepted
+- **Context:** The cluster must avoid legacy `aws-auth`, protect Kubernetes Secrets, restrict API exposure, and prevent pod access to instance metadata credentials.
+- **Decision:** Use EKS API authentication with access entries, encrypt Secrets with a rotating KMS key, enable all control-plane log types, place managed nodes in private subnets, restrict the public API endpoint to caller-supplied CIDRs, install the EKS Pod Identity Agent, and require IMDSv2 with hop limit 1 on nodes.
+- **Alternatives:** Use `aws-auth`; leave Secrets unencrypted; allow `0.0.0.0/0`; use public nodes; permit IMDSv1 or a hop limit of 2.
+- **Consequences:** The cluster has stronger default isolation and auditability, but operators must supply explicit API CIDRs, access entries, and workload IAM associations before use.
