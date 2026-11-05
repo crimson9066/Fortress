@@ -27,3 +27,11 @@ This log records choices that affect security, reproducibility, operations, or p
 - **Decision:** Use Go's standard-library `net/http` and `log/slog`, with `prometheus/client_golang` as the only external application dependency. Keep the item store in memory for this phase.
 - **Alternatives:** Use a web framework; add a database; use a different logging or metrics stack.
 - **Consequences:** The service has a small dependency and attack surface, but data is intentionally ephemeral and the API is not horizontally consistent until a persistence layer is planned and implemented.
+
+## ADR-003: Native S3 state locking with a customer-managed KMS key
+
+- **Status:** Accepted
+- **Context:** Terraform state needs recovery, encryption, transport protection, and locking without introducing an additional state-locking database.
+- **Decision:** Use Terraform 1.17.1's S3 backend `use_lockfile` native locking, an S3 state bucket with versioning and SSE-KMS using a rotating customer-managed key, and a separate encrypted access-log bucket. Bootstrap remains local-state until its outputs are reviewed and the backend is explicitly configured.
+- **Alternatives:** Use the legacy DynamoDB locking table; use an unencrypted or unversioned bucket; use a hosted Terraform backend.
+- **Consequences:** The bootstrap has fewer AWS resources and follows the current Terraform backend behavior, but the backend configuration must be completed manually after bootstrap and the KMS key has a 30-day deletion window.

@@ -1,0 +1,13 @@
+# Bootstrap intentionally uses local state. Configure this backend only after
+# the state bucket has been created and its outputs have been reviewed.
+terraform {
+  backend "s3" {
+    bucket       = "replace-with-state-bucket-name"
+    key          = "fortress/bootstrap/terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
+    kms_key_id   = "replace-with-state-kms-key-arn"
+    use_lockfile = true
+  }
+}
+
