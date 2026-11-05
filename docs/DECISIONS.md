@@ -35,3 +35,11 @@ This log records choices that affect security, reproducibility, operations, or p
 - **Decision:** Use Terraform 1.17.1's S3 backend `use_lockfile` native locking, an S3 state bucket with versioning and SSE-KMS using a rotating customer-managed key, and a separate encrypted access-log bucket. Bootstrap remains local-state until its outputs are reviewed and the backend is explicitly configured.
 - **Alternatives:** Use the legacy DynamoDB locking table; use an unencrypted or unversioned bucket; use a hosted Terraform backend.
 - **Consequences:** The bootstrap has fewer AWS resources and follows the current Terraform backend behavior, but the backend configuration must be completed manually after bootstrap and the KMS key has a 30-day deletion window.
+
+## ADR-004: One NAT gateway per Availability Zone
+
+- **Status:** Accepted
+- **Context:** Private subnets need controlled outbound access while the VPC module remains reusable for multi-AZ EKS environments.
+- **Decision:** Create one NAT gateway and private route table per selected Availability Zone. Enable VPC flow logs to an encrypted, retained CloudWatch log group and remove all default security-group rules.
+- **Alternatives:** Use one shared NAT gateway to reduce cost; expose private workloads directly; leave the default security-group rules unchanged.
+- **Consequences:** The design is more resilient to an Availability Zone failure and avoids cross-AZ NAT traffic, but NAT gateways incur recurring hourly and data-processing charges. The cost trade-off is documented in `docs/cost.md` during the budget phase.
