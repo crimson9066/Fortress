@@ -1,0 +1,4 @@
+aws_region            = "us-east-1"
+budget_alert_email    = "replace-me@example.invalid"
+api_public_access_cidrs = ["203.0.113.0/24"]
+
