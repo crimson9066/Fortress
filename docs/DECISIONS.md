@@ -59,3 +59,11 @@ This log records choices that affect security, reproducibility, operations, or p
 - **Decision:** Use EKS API authentication with access entries, encrypt Secrets with a rotating KMS key, enable all control-plane log types, place managed nodes in private subnets, restrict the public API endpoint to caller-supplied CIDRs, install the EKS Pod Identity Agent, and require IMDSv2 with hop limit 1 on nodes.
 - **Alternatives:** Use `aws-auth`; leave Secrets unencrypted; allow `0.0.0.0/0`; use public nodes; permit IMDSv1 or a hop limit of 2.
 - **Consequences:** The cluster has stronger default isolation and auditability, but operators must supply explicit API CIDRs, access entries, and workload IAM associations before use.
+
+## ADR-007: Explicit monthly budget and confirmation-gated AWS helpers
+
+- **Status:** Accepted
+- **Context:** Optional AWS demonstrations can create recurring charges and destructive cleanup must be deliberate.
+- **Decision:** Require a monthly AWS Budget with actual and forecasted email alerts. Provide environment allowlisted `aws-up.sh` and `aws-down.sh` helpers that print the impact and require the exact environment name before invoking Terraform.
+- **Alternatives:** Rely on manual commands with no budget; auto-apply or auto-destroy from CI; accept arbitrary environment names.
+- **Consequences:** Cost and destructive-action friction are visible before use, but the alert email and environment-specific variables must be configured by the operator.
