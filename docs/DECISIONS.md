@@ -43,3 +43,11 @@ This log records choices that affect security, reproducibility, operations, or p
 - **Decision:** Create one NAT gateway and private route table per selected Availability Zone. Enable VPC flow logs to an encrypted, retained CloudWatch log group and remove all default security-group rules.
 - **Alternatives:** Use one shared NAT gateway to reduce cost; expose private workloads directly; leave the default security-group rules unchanged.
 - **Consequences:** The design is more resilient to an Availability Zone failure and avoids cross-AZ NAT traffic, but NAT gateways incur recurring hourly and data-processing charges. The cost trade-off is documented in `docs/cost.md` during the budget phase.
+
+## ADR-005: Exact GitHub OIDC subjects for plan and apply
+
+- **Status:** Accepted
+- **Context:** Terraform CI must use short-lived AWS credentials without exposing long-lived secrets or allowing arbitrary branches and workflows to assume privileged roles.
+- **Decision:** Create one GitHub OIDC provider and two roles. The plan role accepts only the exact repository pull-request subject. The apply role accepts only the exact protected `production` environment subject and an exact workflow reference on `refs/heads/main`. Both roles have a one-hour maximum session and receive permissions only through explicitly supplied policy ARNs.
+- **Alternatives:** Use access keys; trust the repository broadly; use wildcard branch or subject conditions; attach broad administrator permissions by default.
+- **Consequences:** Fork and branch credentials are constrained by immutable OIDC claims, but callers must explicitly provide the minimum managed policies needed for each Terraform stack.
