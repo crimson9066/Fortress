@@ -1,0 +1,11 @@
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: items-fake
+  namespace: items-prod
+spec:
+  provider:
+    fake:
+      data:
+        - key: /fortress/prod/items
+          value: kind-only-placeholder

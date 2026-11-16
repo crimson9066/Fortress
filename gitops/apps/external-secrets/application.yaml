@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-secrets
+  namespace: argocd
+spec:
+  project: fortress
+  sources:
+    - repoURL: https://charts.external-secrets.io
+      chart: external-secrets
+      targetRevision: 2.15.0
+      helm:
+        releaseName: external-secrets
+        valuesObject:
+          installCRDs: true
+          serviceAccount:
+            create: true
+            name: external-secrets
+    - repoURL: https://github.com/crimson9066/Fortress.git
+      targetRevision: main
+      path: policies/external-secrets/kind
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: external-secrets
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

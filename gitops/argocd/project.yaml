@@ -8,6 +8,7 @@ spec:
   sourceRepos:
     - https://github.com/crimson9066/Fortress.git
     - https://kyverno.github.io/kyverno
+    - https://charts.external-secrets.io
   destinations:
     - namespace: items-dev
       server: https://kubernetes.default.svc
@@ -16,6 +17,8 @@ spec:
     - namespace: argocd
       server: https://kubernetes.default.svc
     - namespace: kyverno
+      server: https://kubernetes.default.svc
+    - namespace: external-secrets
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
     - group: ""
@@ -47,3 +50,7 @@ spec:
       kind: NetworkPolicy
     - group: autoscaling
       kind: HorizontalPodAutoscaler
+    - group: external-secrets.io
+      kind: SecretStore
+    - group: external-secrets.io
+      kind: ExternalSecret

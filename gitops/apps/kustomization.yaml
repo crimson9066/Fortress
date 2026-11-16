@@ -4,3 +4,4 @@ resources:
   - dev/application.yaml
   - prod/application.yaml
   - kyverno/application.yaml
+  - external-secrets/application.yaml
