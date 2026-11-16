@@ -7,7 +7,7 @@ metadata:
     policies.kyverno.io/category: Software Supply Chain Security
     policies.kyverno.io/description: Only digest-pinned images from the Fortress GHCR namespace and verified by the Fortress publish workflow are admitted.
 spec:
-  validationFailureAction: Audit
+  validationFailureAction: Enforce
   background: false
   rules:
     - name: require-fortress-image-digest
