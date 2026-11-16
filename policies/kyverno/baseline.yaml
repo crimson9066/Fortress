@@ -16,6 +16,15 @@ spec:
           - resources:
               kinds:
                 - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - argocd
+                - kyverno
+                - external-secrets
+                - monitoring
+                - falco
       validate:
         message: Privileged containers are not allowed.
         pattern:
@@ -35,6 +44,15 @@ spec:
           - resources:
               kinds:
                 - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - argocd
+                - kyverno
+                - external-secrets
+                - monitoring
+                - falco
       validate:
         message: Host namespaces are not allowed.
         pattern:
@@ -48,6 +66,15 @@ spec:
           - resources:
               kinds:
                 - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - argocd
+                - kyverno
+                - external-secrets
+                - monitoring
+                - falco
       validate:
         message: hostPath volumes are not allowed.
         deny:
@@ -62,6 +89,15 @@ spec:
           - resources:
               kinds:
                 - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - argocd
+                - kyverno
+                - external-secrets
+                - monitoring
+                - falco
       validate:
         message: Pods must run as non-root.
         pattern:
@@ -74,6 +110,15 @@ spec:
           - resources:
               kinds:
                 - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - argocd
+                - kyverno
+                - external-secrets
+                - monitoring
+                - falco
       validate:
         message: Every container must use a read-only root filesystem.
         foreach:
@@ -91,6 +136,15 @@ spec:
           - resources:
               kinds:
                 - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - argocd
+                - kyverno
+                - external-secrets
+                - monitoring
+                - falco
       validate:
         message: Every container must drop all Linux capabilities.
         foreach:
@@ -112,6 +166,15 @@ spec:
           - resources:
               kinds:
                 - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - argocd
+                - kyverno
+                - external-secrets
+                - monitoring
+                - falco
       validate:
         message: Every container must define CPU and memory limits.
         foreach:

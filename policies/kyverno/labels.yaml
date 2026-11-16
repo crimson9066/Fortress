@@ -21,6 +21,15 @@ spec:
                 - DaemonSet
                 - Job
                 - CronJob
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - argocd
+                - kyverno
+                - external-secrets
+                - monitoring
+                - falco
       validate:
         message: Resources must have owner and app.kubernetes.io/name labels.
         pattern:

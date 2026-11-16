@@ -16,6 +16,15 @@ spec:
           - resources:
               kinds:
                 - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - argocd
+                - kyverno
+                - external-secrets
+                - monitoring
+                - falco
       validate:
         message: Images must be digest-pinned and originate from ghcr.io/crimson9066.
         foreach:
@@ -31,6 +40,15 @@ spec:
           - resources:
               kinds:
                 - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - argocd
+                - kyverno
+                - external-secrets
+                - monitoring
+                - falco
       verifyImages:
         - imageReferences:
             - ghcr.io/crimson9066/*@sha256:*
