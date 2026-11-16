@@ -6,3 +6,4 @@ resources:
   - kyverno/application.yaml
   - external-secrets/application.yaml
   - observability/kube-prometheus-stack.yaml
+  - observability/falco.yaml
