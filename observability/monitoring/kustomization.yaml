@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - servicemonitor-items.yaml
+  - prometheusrule-slos.yaml
   - networkpolicy.yaml
 configMapGenerator:
   - name: fortress-grafana-dashboards
