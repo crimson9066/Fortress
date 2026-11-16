@@ -2,6 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: items
+  labels:
+    owner: crimson9066
+    app.kubernetes.io/name: items
 spec:
   replicas: 2
   selector:
@@ -10,6 +13,7 @@ spec:
   template:
     metadata:
       labels:
+        owner: crimson9066
         app.kubernetes.io/name: items
     spec:
       serviceAccountName: items
@@ -31,6 +35,9 @@ spec:
         - name: items
           image: ghcr.io/crimson9066/fortress@sha256:0000000000000000000000000000000000000000000000000000000000000000
           imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: items-config
           ports:
             - name: http
               containerPort: 8080

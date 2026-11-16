@@ -1,0 +1,30 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: fortress-owner-app-labels
+  annotations:
+    policies.kyverno.io/title: Fortress ownership labels
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/description: Workloads must identify their owning team and application.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-owner-and-app
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+                - Job
+                - CronJob
+      validate:
+        message: Resources must have owner and app.kubernetes.io/name labels.
+        pattern:
+          metadata:
+            labels:
+              owner: "?*"
+              app.kubernetes.io/name: "?*"

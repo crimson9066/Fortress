@@ -7,6 +7,8 @@ spec:
   description: Fortress workloads with explicitly restricted GitOps boundaries.
   sourceRepos:
     - https://github.com/crimson9066/Fortress.git
+    - https://kyverno.github.io/kyverno
+    - https://charts.external-secrets.io
   destinations:
     - namespace: items-dev
       server: https://kubernetes.default.svc
@@ -14,9 +16,23 @@ spec:
       server: https://kubernetes.default.svc
     - namespace: argocd
       server: https://kubernetes.default.svc
+    - namespace: kyverno
+      server: https://kubernetes.default.svc
+    - namespace: external-secrets
+      server: https://kubernetes.default.svc
   clusterResourceWhitelist:
     - group: ""
       kind: Namespace
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: kyverno.io
+      kind: ClusterPolicy
   namespaceResourceWhitelist:
     - group: argoproj.io
       kind: Application
@@ -34,3 +50,7 @@ spec:
       kind: NetworkPolicy
     - group: autoscaling
       kind: HorizontalPodAutoscaler
+    - group: external-secrets.io
+      kind: SecretStore
+    - group: external-secrets.io
+      kind: ExternalSecret
