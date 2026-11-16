@@ -12,7 +12,7 @@ Fortress is a secure, observable Kubernetes platform portfolio project demonstra
 | Phase 4 | Terraform and optional AWS infrastructure | Planned |
 | Phase 5 | Local kind cluster and GitOps delivery | Implemented; live cluster verification requires Docker, kind, and Helm |
 | Phase 6 | Kyverno policy enforcement and External Secrets | Implemented; live cluster verification requires Docker, kind, and Helm |
-| Phase 7 | Observability and runtime detection | Planned |
+| Phase 7 | Observability and runtime detection | Implemented; live cluster verification requires Docker, kind, and Helm |
 | Phase 8 | Game days, evidence, and operational documentation | Planned |
 
 ## Local development
@@ -28,3 +28,6 @@ then `make bootstrap`; see [`docs/runbooks/local-cluster.md`](docs/runbooks/loca
 Phase 6 provides pinned Kyverno policies, pass/fail CLI fixtures, and
 External Secrets Operator manifests for kind's fake provider or AWS
 Secrets Manager. See [`docs/runbooks/policy-rollout.md`](docs/runbooks/policy-rollout.md).
+
+Phase 7 provides pinned Prometheus/Grafana monitoring, SLO alerts, Falco
+runtime detection, and Alertmanager runbooks through Argo CD.
