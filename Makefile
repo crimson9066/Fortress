@@ -1,4 +1,4 @@
-.PHONY: help fmt validate lint test security vuln docker-build kind-up bootstrap cluster-up cluster-down
+.PHONY: help fmt validate lint test security vuln docker-build kind-up bootstrap cluster-up cluster-down game-day
 
 help:
 	@printf "Available targets:\n"
@@ -12,6 +12,7 @@ help:
 	@printf "  cluster-up Create the local kind cluster with Cilium\n"
 	@printf "  bootstrap Install hardened Argo CD and GitOps applications\n"
 	@printf "  cluster-down Delete the local kind cluster\n"
+	@printf "  game-day  Print the game-day results table\n"
 
 fmt validate security:
 	@printf "%s is planned; no implementation exists in Phase 1.\n" "$@"
@@ -36,3 +37,6 @@ vuln:
 
 docker-build:
 	docker build --file app/Dockerfile --tag fortress:local app
+
+game-day:
+	bash scripts/game-day-runner.sh
