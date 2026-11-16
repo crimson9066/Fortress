@@ -86,3 +86,35 @@ func TestRequestLimitAndHeaders(t *testing.T) {
 		t.Fatal("security header missing")
 	}
 }
+
+func TestFaultInjectionRequiresFlagAndHeader(t *testing.T) {
+	tests := []struct {
+		name    string
+		enabled bool
+		header  string
+		want    int
+	}{
+		{name: "disabled", enabled: false, header: "500", want: http.StatusOK},
+		{name: "enabled without trigger", enabled: true, want: http.StatusOK},
+		{name: "enabled 500", enabled: true, header: "500", want: http.StatusInternalServerError},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app := newServer(config{
+				maxBodyBytes:          1024,
+				rateLimit:             100,
+				rateWindow:            time.Minute,
+				faultInjectionEnabled: tt.enabled,
+				faultInjectionStatus:  http.StatusInternalServerError,
+				faultInjectionDelay:   time.Millisecond,
+			}, slog.New(slog.NewJSONHandler(io.Discard, nil)))
+			req := httptest.NewRequest(http.MethodGet, "/v1/items", nil)
+			req.Header.Set("X-Fortress-Fault", tt.header)
+			rec := httptest.NewRecorder()
+			app.routes().ServeHTTP(rec, req)
+			if rec.Code != tt.want {
+				t.Fatalf("status = %d, want %d", rec.Code, tt.want)
+			}
+		})
+	}
+}

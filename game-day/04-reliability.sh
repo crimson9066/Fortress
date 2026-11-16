@@ -7,7 +7,15 @@ if [[ "$GAME_DAY_CONFIRM" != "I-understand-this-is-a-disposable-cluster" ]]; the
   exit 1
 fi
 
+namespace="${GAME_DAY_NAMESPACE:-items-dev}"
+if [[ "$namespace" == "items-prod" ]]; then
+  echo "Fault injection is forbidden against the prod overlay." >&2
+  exit 1
+fi
 base_url="${GAME_DAY_BASE_URL:-http://localhost:8080}"
+kubectl -n "$namespace" set env deployment/items \
+  FORTRESS_FAULT_INJECTION_ENABLED=true
+kubectl -n "$namespace" rollout status deployment/items --timeout=90s
 echo "Confirm the disposable workload has FORTRESS_FAULT_INJECTION_ENABLED=true."
 curl --fail-with-body -sS -X POST "$base_url/v1/items" \
   -H 'Content-Type: application/json' \

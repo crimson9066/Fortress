@@ -35,6 +35,9 @@ spec:
         - name: items
           image: ghcr.io/crimson9066/fortress@sha256:0000000000000000000000000000000000000000000000000000000000000000
           imagePullPolicy: IfNotPresent
+          env:
+            - name: FORTRESS_FAULT_INJECTION_ENABLED
+              value: "false"
           envFrom:
             - secretRef:
                 name: items-config

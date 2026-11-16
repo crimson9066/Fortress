@@ -18,13 +18,16 @@ import (
 )
 
 type server struct {
-	logger      *slog.Logger
-	store       *itemStore
-	maxBodySize int64
-	limiter     *rateLimiter
-	requests    *prometheus.CounterVec
-	duration    *prometheus.HistogramVec
-	metrics     http.Handler
+	logger                *slog.Logger
+	store                 *itemStore
+	maxBodySize           int64
+	limiter               *rateLimiter
+	requests              *prometheus.CounterVec
+	duration              *prometheus.HistogramVec
+	metrics               http.Handler
+	faultInjectionEnabled bool
+	faultInjectionStatus  int
+	faultInjectionDelay   time.Duration
 }
 
 func newServer(cfg config, logger *slog.Logger) *server {
@@ -40,13 +43,16 @@ func newServer(cfg config, logger *slog.Logger) *server {
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(requests, duration)
 	return &server{
-		logger:      logger,
-		store:       &itemStore{},
-		maxBodySize: cfg.maxBodyBytes,
-		limiter:     newRateLimiter(cfg.rateLimit, cfg.rateWindow),
-		requests:    requests,
-		duration:    duration,
-		metrics:     promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
+		logger:                logger,
+		store:                 &itemStore{},
+		maxBodySize:           cfg.maxBodyBytes,
+		limiter:               newRateLimiter(cfg.rateLimit, cfg.rateWindow),
+		requests:              requests,
+		duration:              duration,
+		metrics:               promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
+		faultInjectionEnabled: cfg.faultInjectionEnabled,
+		faultInjectionStatus:  cfg.faultInjectionStatus,
+		faultInjectionDelay:   cfg.faultInjectionDelay,
 	}
 }
 
@@ -69,6 +75,9 @@ func (s *server) readyz(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *server) createItem(w http.ResponseWriter, r *http.Request) {
+	if s.injectFault(w, r) {
+		return
+	}
 	input, err := parseItem(http.MaxBytesReader(w, r.Body, s.maxBodySize), s.maxBodySize)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid item")
@@ -77,8 +86,25 @@ func (s *server) createItem(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, s.store.add(input))
 }
 
-func (s *server) listItems(w http.ResponseWriter, _ *http.Request) {
+func (s *server) listItems(w http.ResponseWriter, r *http.Request) {
+	if s.injectFault(w, r) {
+		return
+	}
 	writeJSON(w, http.StatusOK, s.store.list())
+}
+
+func (s *server) injectFault(w http.ResponseWriter, r *http.Request) bool {
+	if !s.faultInjectionEnabled {
+		return false
+	}
+	switch strings.TrimSpace(r.Header.Get("X-Fortress-Fault")) {
+	case "500":
+		writeError(w, s.faultInjectionStatus, "fault injection")
+		return true
+	case "latency":
+		time.Sleep(s.faultInjectionDelay)
+	}
+	return false
 }
 
 func writeError(w http.ResponseWriter, status int, message string) {
