@@ -107,3 +107,11 @@ This log records choices that affect security, reproducibility, operations, or p
 - **Decision:** Pin the official Kyverno Helm chart to 3.9.1 (application v1.19.1) and the CLI fixtures to v1.19.1. Upgrade to the newer CEL policy APIs only as a separate reviewed migration.
 - **Alternatives:** Convert every policy to the new CEL APIs in this phase; use the mutable chart or CLI latest release.
 - **Consequences:** The requested ClusterPolicy model remains testable and reproducible, but a future Kyverno upgrade must include a deliberate policy API migration and compatibility review.
+
+## ADR-013: Pinned observability stack and Falco driver
+
+- **Status:** Accepted
+- **Context:** Detection and SLO evidence must be reproducible through GitOps without exposing Grafana credentials or weakening workload isolation.
+- **Decision:** Install kube-prometheus-stack 93.3.0, Falco chart 7.1.0, and Falcosidekick 0.3.5 through Argo CD. Configure Falco to use `modern_ebpf` without automatic fallback, and route events to Alertmanager through Falcosidekick.
+- **Alternatives:** Use mutable chart versions; use node-exporter and privileged monitoring broadly; expose Grafana externally; use Falco kernel-module fallback automatically.
+- **Consequences:** The stack is pinned and auditable, but Falco requires a compatible host kernel and its namespace is an explicit privileged platform exception. Grafana access remains internal and credentials are supplied by External Secrets.

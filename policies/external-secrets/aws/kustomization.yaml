@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - secretstores.yaml
   - external-secrets.yaml
+  - monitoring.yaml

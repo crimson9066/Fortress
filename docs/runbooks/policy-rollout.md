@@ -29,6 +29,11 @@ The generated default-deny policy intentionally excludes `kube-system`,
 components whose traffic is managed by their platform operators rather than
 application teams.
 
+The same namespaces are excluded from the baseline, label, and image
+policies. Monitoring charts and Falco are platform components; Falco also
+requires host access for syscall capture. Application namespaces remain
+subject to the full policy set.
+
 ## AWS External Secrets
 
 Create separate IAM roles for the dev and prod External Secrets service
