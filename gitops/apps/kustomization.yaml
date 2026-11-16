@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - dev/application.yaml
   - prod/application.yaml
+  - kyverno/application.yaml
