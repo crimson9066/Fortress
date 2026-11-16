@@ -8,6 +8,20 @@
 
 AWS resources are optional and ephemeral; kind is the primary local target.
 
+## Status
+
+| Phase | Scope | Status |
+|---|---|---|
+| 1 | Repository foundation and governance | Implemented |
+| 2 | Go workload and container hardening | Implemented; live Docker checks pending |
+| 3 | GitHub Actions security gates | Implemented; live workflow results pending |
+| 4 | Terraform and optional AWS infrastructure | Implemented; no AWS apply performed |
+| 5 | Local kind cluster and GitOps delivery | Implemented; live cluster verification pending |
+| 6 | Kyverno and External Secrets | Implemented; live cluster verification pending |
+| 7 | Observability and runtime detection | Implemented; live alert verification pending |
+| 8 | Game-day scenarios | Implemented; actual exercises pending |
+| 9 | Documentation and release preparation | In progress |
+
 ## Architecture
 
 ```mermaid
