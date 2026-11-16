@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: items-dev
+  namespace: argocd
+spec:
+  project: fortress
+  source:
+    repoURL: https://github.com/crimson9066/Fortress.git
+    targetRevision: main
+    path: gitops/apps/items/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: items-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

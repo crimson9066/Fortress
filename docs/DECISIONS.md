@@ -67,3 +67,19 @@ This log records choices that affect security, reproducibility, operations, or p
 - **Decision:** Require a monthly AWS Budget with actual and forecasted email alerts. Provide environment allowlisted `aws-up.sh` and `aws-down.sh` helpers that print the impact and require the exact environment name before invoking Terraform.
 - **Alternatives:** Rely on manual commands with no budget; auto-apply or auto-destroy from CI; accept arbitrary environment names.
 - **Consequences:** Cost and destructive-action friction are visible before use, but the alert email and environment-specific variables must be configured by the operator.
+
+## ADR-008: Cilium as the kind network policy provider
+
+- **Status:** Accepted
+- **Context:** kind's default CNI is suitable for connectivity but does not provide the NetworkPolicy enforcement required by Fortress.
+- **Decision:** Disable kindnet and install the pinned Cilium 1.20.4 chart through its OCI registry. The cluster bootstrap waits for Cilium and all nodes to become ready before continuing.
+- **Alternatives:** Use kindnet with unenforced policy manifests; install Calico; use a cloud-provider CNI.
+- **Consequences:** Local policy behavior is enforceable and close to a production CNI, but cluster setup requires Helm and a Docker environment capable of running Cilium.
+
+## ADR-009: Pinned Argo CD with GitOps application boundaries
+
+- **Status:** Accepted
+- **Context:** GitOps must not expose an unauthenticated UI or allow arbitrary repositories, namespaces, or cluster resources to be deployed.
+- **Decision:** Install Argo CD from the official v3.6.1 manifest URL, disable anonymous and built-in admin access, use a read-only default RBAC role, restrict the Fortress AppProject to this repository and the items namespaces, and expose the UI only through port-forwarding.
+- **Alternatives:** Track the mutable stable manifest; expose the UI with a LoadBalancer; allow cluster-wide application permissions.
+- **Consequences:** The local installation is reproducible and narrowly scoped, but repository authentication must be provisioned out-of-band and an identity provider is required for interactive Argo CD access.
