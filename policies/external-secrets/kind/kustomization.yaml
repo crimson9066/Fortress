@@ -5,3 +5,5 @@ resources:
   - store-prod.yaml
   - external-secret-dev.yaml
   - external-secret-prod.yaml
+  - store-monitoring.yaml
+  - external-secret-monitoring.yaml

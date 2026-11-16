@@ -5,3 +5,4 @@ resources:
   - prod/application.yaml
   - kyverno/application.yaml
   - external-secrets/application.yaml
+  - observability/kube-prometheus-stack.yaml
