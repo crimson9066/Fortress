@@ -84,7 +84,7 @@ from the publish workflow; never use a tag. Details are in the
 | Non-root, restricted workload | [gitops/apps/items/base/deployment.yaml](gitops/apps/items/base/deployment.yaml) | `kubectl kustomize gitops/apps/items/overlays/prod` |
 | Admission enforcement | [policies/kyverno](policies/kyverno) | `kyverno test policies/tests` |
 | Network isolation | [gitops/apps/items/base/networkpolicy.yaml](gitops/apps/items/base/networkpolicy.yaml) | `kubectl kustomize gitops/apps/items/overlays/dev` |
-| Signed image verification | [gitops/apps/observability/falco.yaml](gitops/apps/observability/falco.yaml) and [publish.yml](.github/workflows/publish.yml) | `grep -R "verifyImages" policies/kyverno` |
+| Signed image verification | [supply-chain policy](policies/kyverno/supply-chain.yaml) and [publish workflow](.github/workflows/publish.yml) | `grep -R "verifyImages" policies/kyverno` |
 | Runtime detection | [observability/falco](observability/falco) | `kubectl kustomize observability/falco` |
 | SLO alerting | [prometheusrule-slos.yaml](observability/monitoring/prometheusrule-slos.yaml) | `kubectl kustomize observability/monitoring` |
 | Secret scanning | [ci.yml](.github/workflows/ci.yml) and [.pre-commit-config.yaml](.pre-commit-config.yaml) | `pre-commit run --all-files` |
