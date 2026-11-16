@@ -25,7 +25,7 @@ spec:
               app.kubernetes.io/name: items
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: observability
+              kubernetes.io/metadata.name: monitoring
       ports:
         - protocol: TCP
           port: 8080

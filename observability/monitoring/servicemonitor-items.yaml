@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: items
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: items
+    owner: crimson9066
+spec:
+  namespaceSelector:
+    matchNames:
+      - items-dev
+      - items-prod
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: items
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scheme: http

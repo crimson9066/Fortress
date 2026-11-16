@@ -1,0 +1,10 @@
+{
+  "title": "Kyverno policy violations",
+  "schemaVersion": 39,
+  "version": 1,
+  "templating": {"list": []},
+  "panels": [
+    {"type": "timeseries", "title": "Policy results", "gridPos": {"x": 0, "y": 0, "w": 24, "h": 8}, "targets": [{"expr": "sum by (policy, rule, result) (rate(kyverno_policy_rule_results_total[5m]))", "legendFormat": "{{policy}}/{{rule}} {{result}}"}]},
+    {"type": "table", "title": "Current violations", "gridPos": {"x": 0, "y": 8, "w": 24, "h": 8}, "targets": [{"expr": "kyverno_policy_rule_results_total{result=\"fail\"}", "format": "table"}]}
+  ]
+}

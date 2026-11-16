@@ -1,0 +1,10 @@
+{
+  "title": "Falco events",
+  "schemaVersion": 39,
+  "version": 1,
+  "templating": {"list": []},
+  "panels": [
+    {"type": "timeseries", "title": "Falco events by rule", "gridPos": {"x": 0, "y": 0, "w": 24, "h": 8}, "targets": [{"expr": "sum by (alertname) (rate(falcosidekick_alerts_total[5m]))", "legendFormat": "{{alertname}}"}]},
+    {"type": "table", "title": "Recent Falco alerts", "gridPos": {"x": 0, "y": 8, "w": 24, "h": 8}, "targets": [{"expr": "falcosidekick_alerts_total", "format": "table"}]}
+  ]
+}
