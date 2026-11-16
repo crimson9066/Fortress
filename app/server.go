@@ -36,7 +36,6 @@ func newServer(cfg config, logger *slog.Logger) *server {
 		Name:    "fortress_http_request_duration_seconds",
 		Help:    "HTTP request duration in seconds.",
 		Buckets: []float64{0.005, 0.01, 0.025, 0.05, 0.1, 0.2, 0.3, 0.5, 1, 2.5, 5, 10},
-		Buckets: prometheus.DefBuckets,
 	}, []string{"route", "status_class"})
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(requests, duration)
