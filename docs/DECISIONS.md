@@ -67,3 +67,51 @@ This log records choices that affect security, reproducibility, operations, or p
 - **Decision:** Require a monthly AWS Budget with actual and forecasted email alerts. Provide environment allowlisted `aws-up.sh` and `aws-down.sh` helpers that print the impact and require the exact environment name before invoking Terraform.
 - **Alternatives:** Rely on manual commands with no budget; auto-apply or auto-destroy from CI; accept arbitrary environment names.
 - **Consequences:** Cost and destructive-action friction are visible before use, but the alert email and environment-specific variables must be configured by the operator.
+
+## ADR-008: Cilium as the kind network policy provider
+
+- **Status:** Accepted
+- **Context:** kind's default CNI is suitable for connectivity but does not provide the NetworkPolicy enforcement required by Fortress.
+- **Decision:** Disable kindnet and install the pinned Cilium 1.20.4 chart through its OCI registry. The cluster bootstrap waits for Cilium and all nodes to become ready before continuing.
+- **Alternatives:** Use kindnet with unenforced policy manifests; install Calico; use a cloud-provider CNI.
+- **Consequences:** Local policy behavior is enforceable and close to a production CNI, but cluster setup requires Helm and a Docker environment capable of running Cilium.
+
+## ADR-009: Pinned Argo CD with GitOps application boundaries
+
+- **Status:** Accepted
+- **Context:** GitOps must not expose an unauthenticated UI or allow arbitrary repositories, namespaces, or cluster resources to be deployed.
+- **Decision:** Install Argo CD from the official v3.6.1 manifest URL, disable anonymous and built-in admin access, use a read-only default RBAC role, restrict the Fortress AppProject to this repository and the items namespaces, and expose the UI only through port-forwarding.
+- **Alternatives:** Track the mutable stable manifest; expose the UI with a LoadBalancer; allow cluster-wide application permissions.
+- **Consequences:** The local installation is reproducible and narrowly scoped, but repository authentication must be provisioned out-of-band and an identity provider is required for interactive Argo CD access.
+
+## ADR-010: Kyverno audit-to-enforce rollout
+
+- **Status:** Accepted
+- **Context:** Admission policies can block platform bootstrap if introduced without observing existing resources and policy compatibility.
+- **Decision:** Introduce the Fortress Kyverno policies in Audit mode, inspect PolicyReports and remediate violations, then change `validationFailureAction` to Enforce. The committed policy baseline is Enforce only after that review; system namespaces are excluded from generated default-deny policies because their control-plane and installer traffic is owned by platform components.
+- **Alternatives:** Start in Enforce immediately; leave policies in Audit permanently; exempt all namespaces.
+- **Consequences:** Rollout requires an explicit audit review and evidence, but production admission is fail-closed and exceptions remain visible and scoped.
+
+## ADR-011: External Secrets with provider-specific stores
+
+- **Status:** Accepted
+- **Context:** Workload configuration must not place secret values in Git while remaining reproducible on kind and least-privilege on AWS.
+- **Decision:** Install External Secrets Operator through Argo CD. Kind uses the documented fake provider with a non-secret local placeholder. AWS uses namespace-scoped SecretStores, IRSA/Pod Identity, and a dedicated role restricted to `fortress/{environment}/items` Secrets Manager resources. The application consumes only the generated Secret.
+- **Alternatives:** Commit Kubernetes Secret manifests; use long-lived AWS access keys; use a cluster-wide SecretStore for all workloads.
+- **Consequences:** Secret values stay outside Git and AWS access can be scoped to one path, but the operator and AWS role must be configured before production sync.
+
+## ADR-012: Pin Kyverno to the legacy ClusterPolicy-compatible release
+
+- **Status:** Accepted
+- **Context:** Kyverno v1.20 removes execution of the legacy `kyverno.io/v1` ClusterPolicy API, while the requested policies and CLI fixtures use ClusterPolicies and `verifyImages`.
+- **Decision:** Pin the official Kyverno Helm chart to 3.9.1 (application v1.19.1) and the CLI fixtures to v1.19.1. Upgrade to the newer CEL policy APIs only as a separate reviewed migration.
+- **Alternatives:** Convert every policy to the new CEL APIs in this phase; use the mutable chart or CLI latest release.
+- **Consequences:** The requested ClusterPolicy model remains testable and reproducible, but a future Kyverno upgrade must include a deliberate policy API migration and compatibility review.
+
+## ADR-013: Pinned observability stack and Falco driver
+
+- **Status:** Accepted
+- **Context:** Detection and SLO evidence must be reproducible through GitOps without exposing Grafana credentials or weakening workload isolation.
+- **Decision:** Install kube-prometheus-stack 93.3.0, Falco chart 7.1.0, and Falcosidekick 0.3.5 through Argo CD. Configure Falco to use `modern_ebpf` without automatic fallback, and route events to Alertmanager through Falcosidekick.
+- **Alternatives:** Use mutable chart versions; use node-exporter and privileged monitoring broadly; expose Grafana externally; use Falco kernel-module fallback automatically.
+- **Consequences:** The stack is pinned and auditable, but Falco requires a compatible host kernel and its namespace is an explicit privileged platform exception. Grafana access remains internal and credentials are supplied by External Secrets.

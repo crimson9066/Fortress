@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - store-dev.yaml
+  - store-prod.yaml
+  - external-secret-dev.yaml
+  - external-secret-prod.yaml
+  - store-monitoring.yaml
+  - external-secret-monitoring.yaml

@@ -1,0 +1,16 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: items-prod
+  namespace: argocd
+spec:
+  project: fortress
+  source:
+    repoURL: https://github.com/crimson9066/Fortress.git
+    targetRevision: main
+    path: gitops/apps/items/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: items-prod
+  syncOptions:
+    - CreateNamespace=true

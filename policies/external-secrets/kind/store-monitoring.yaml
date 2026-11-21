@@ -1,0 +1,13 @@
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: grafana-admin-fake
+  namespace: monitoring
+spec:
+  provider:
+    fake:
+      data:
+        - key: /fortress/monitoring/grafana-admin-user
+          value: fortress-local-admin
+        - key: /fortress/monitoring/grafana-admin-password
+          value: kind-only-generated-password-placeholder

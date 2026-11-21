@@ -1,6 +1,9 @@
 # Threat Model
 
-This STRIDE baseline covers the planned Fortress platform. Every mitigation is **Planned** until implemented and verified.
+This STRIDE assessment covers the implemented Fortress platform. Statuses are
+based on repository evidence and recorded local verification; controls that
+require a live cluster, AWS account, or GitHub settings are marked
+**Partially mitigated** until those checks are run.
 
 ## Assets
 
@@ -31,16 +34,21 @@ This STRIDE baseline covers the planned Fortress platform. Every mitigation is *
 
 ## STRIDE threats
 
-| # | STRIDE category | Threat | Component | Planned mitigation | Phase |
+| # | STRIDE category | Threat | Component | Status | Evidence |
 |---:|---|---|---|---|---|
-| 1 | Spoofing | A stolen CI identity impersonates the deployment role | GitHub Actions / AWS | Use GitHub OIDC with repository and branch or environment conditions; no long-lived keys | Planned: Phase 4-5 |
-| 2 | Tampering | A pull request changes infrastructure or policy without adequate review | GitHub / Terraform / policies | CODEOWNERS, required reviews, protected branches, pinned dependencies, and fail-closed checks | Planned: Phase 1, 5 |
-| 3 | Repudiation | A destructive or privileged change cannot be attributed | GitHub / cluster / cloud | Signed commits, immutable audit logs, workflow provenance, and retained evidence | Planned: Phase 5, 8 |
-| 4 | Information disclosure | Secrets or sensitive state are exposed in source or artifacts | Repository / CI / Terraform | Secret scanning, gitleaks, encrypted remote state, redaction, and least-privilege access | Planned: Phase 1, 4-5 |
-| 5 | Denial of service | An exposed workload or unbounded pod exhausts resources | Kubernetes / workload | Default-deny network policy, resource requests and limits, probes, and non-public ingress | Planned: Phase 3 |
-| 6 | Elevation of privilege | A pod or service account gains host or cluster privileges | Kubernetes / workload | Restricted pod security, non-root containers, dropped capabilities, scoped RBAC, and Kyverno policies | Planned: Phase 2-3 |
-| 7 | Tampering | An untrusted image or dependency enters the deployment | Build / registry / GitOps | Digest-pinned images, dependency scanning, provenance, admission policy, and review gates | Planned: Phase 2, 5-6 |
-| 8 | Information disclosure | Telemetry leaks credentials or personal data | Observability | Structured redaction, restricted access, encrypted transport and storage, and retention limits | Planned: Phase 7-8 |
-| 9 | Denial of service | A malicious or faulty policy blocks recovery or deployment | Kyverno / Argo CD | Test policies, staged rollout, documented break-glass procedure, and game-day validation | Planned: Phase 3, 6, 8 |
-| 10 | Elevation of privilege | Cloud trust permits an unintended repository or branch to assume a role | AWS IAM / OIDC | Exact repository, ref, and environment conditions; short-lived credentials; audit and negative tests | Planned: Phase 4-5 |
+| 1 | Spoofing | A stolen CI identity impersonates the deployment role | GitHub Actions / AWS | Partially mitigated | [OIDC module](../infra/terraform/modules/github-oidc), [publish workflow](../.github/workflows/publish.yml); live AWS trust verification is not recorded |
+| 2 | Tampering | A pull request changes infrastructure or policy without adequate review | GitHub / Terraform / policies | Partially mitigated | [PR checklist](../.github/pull_request_template.md), [CODEOWNERS](../.github/CODEOWNERS), [branch settings](BRANCH_PROTECTION.md) |
+| 3 | Repudiation | A destructive or privileged change cannot be attributed | GitHub / cluster / cloud | Partially mitigated | [workflow provenance](../.github/workflows/publish.yml), [branch settings](BRANCH_PROTECTION.md); signed-commit enforcement remains a manual setting |
+| 4 | Information disclosure | Secrets or sensitive state are exposed in source or artifacts | Repository / CI / Terraform | Mitigated | [CI secret scan](../.github/workflows/ci.yml), [pre-commit hooks](../.pre-commit-config.yaml), [encrypted state](../infra/terraform/bootstrap) |
+| 5 | Denial of service | An exposed workload or unbounded pod exhausts resources | Kubernetes / workload | Partially mitigated | [workload limits and probes](../gitops/apps/items/base/deployment.yaml), [network policy](../gitops/apps/items/base/networkpolicy.yaml); live enforcement is not recorded |
+| 6 | Elevation of privilege | A pod or service account gains host or cluster privileges | Kubernetes / workload | Mitigated | [Kyverno baseline](../policies/kyverno/baseline.yaml), [restricted workload](../gitops/apps/items/base/deployment.yaml), [service account](../gitops/apps/items/base/serviceaccount.yaml) |
+| 7 | Tampering | An untrusted image or dependency enters the deployment | Build / registry / GitOps | Mitigated | [supply-chain policy](../policies/kyverno/supply-chain.yaml), [publish workflow](../.github/workflows/publish.yml), [policy fixtures](../policies/tests) |
+| 8 | Information disclosure | Telemetry leaks credentials or personal data | Observability | Partially mitigated | [structured logging](../app/server.go), [External Secrets](../policies/external-secrets), [monitoring policies](../observability/monitoring); retention and live access review remain operational tasks |
+| 9 | Denial of service | A malicious or faulty policy blocks recovery or deployment | Kyverno / Argo CD | Partially mitigated | [Kyverno fixtures](../policies/tests), [rollout runbook](runbooks/policy-rollout.md), [game-day scenarios](../game-day); live game-day results are not yet recorded |
+| 10 | Elevation of privilege | Cloud trust permits an unintended repository or branch to assume a role | AWS IAM / OIDC | Partially mitigated | [scoped trust policies](../infra/terraform/modules/github-oidc), [Terraform checks](../.github/workflows/terraform.yml); AWS negative tests require an account |
 
+## Accepted risks
+
+- Falco requires a privileged platform namespace for host syscall capture.
+- The application store is intentionally in-memory for this portfolio project.
+- AWS resources remain optional and are not created by CI automatically.
