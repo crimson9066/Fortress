@@ -215,3 +215,27 @@ jobs:
           path: fortress-sbom.cdx.json
           if-no-files-found: error
           retention-days: 7
+
+  kyverno:
+    name: kyverno-policy-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        # v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Install Kyverno CLI
+        run: |
+          curl --fail --silent --show-error --location \
+            --output /tmp/kyverno.tar.gz \
+            https://github.com/kyverno/kyverno/releases/download/v1.19.1/kyverno-cli_v1.19.1_linux_x86_64.tar.gz
+          echo "b38228f367fc0fdc2b08f4c83ea50ac5f16c60ff8d62d76a66157c33c47b70ae  /tmp/kyverno.tar.gz" | sha256sum --check
+          tar -xzf /tmp/kyverno.tar.gz -C /tmp
+          install /tmp/kyverno /usr/local/bin/kyverno
+      - name: Run Kyverno pass and fail fixtures
+        run: kyverno test policies/tests

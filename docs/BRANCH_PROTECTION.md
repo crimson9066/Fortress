@@ -30,6 +30,12 @@ Require these checks on the default branch after the corresponding workflows are
 - `trivy-image`
 - `sbom`
 - `workflow-lint`
+- `terraform-fmt`
+- `terraform-validate`
+- `tflint`
+- `checkov`
+- `trivy-config`
+- `terraform-plan`
 
 The `publish` workflow is restricted to the default branch and is not a pull-request merge requirement.
 

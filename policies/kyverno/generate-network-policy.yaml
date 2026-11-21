@@ -1,0 +1,42 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: fortress-default-deny-network-policy
+  annotations:
+    policies.kyverno.io/title: Default deny for application namespaces
+    policies.kyverno.io/category: Networking
+    policies.kyverno.io/description: Generate a default-deny NetworkPolicy whenever an application namespace is created.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: generate-default-deny
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+      exclude:
+        any:
+          # System namespaces are excluded because their control-plane and
+          # add-on traffic is managed by their installers, not applications.
+          - resources:
+              names:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+                - argocd
+                - kyverno
+                - external-secrets
+      generate:
+        synchronize: true
+        apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        name: default-deny
+        namespace: "{{request.object.metadata.name}}"
+        data:
+          spec:
+            podSelector: {}
+            policyTypes:
+              - Ingress
+              - Egress

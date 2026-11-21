@@ -1,0 +1,61 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: fortress-image-supply-chain
+  annotations:
+    policies.kyverno.io/title: Fortress image supply chain
+    policies.kyverno.io/category: Software Supply Chain Security
+    policies.kyverno.io/description: Only digest-pinned images from the Fortress GHCR namespace and verified by the Fortress publish workflow are admitted.
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: require-fortress-image-digest
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - argocd
+                - kyverno
+                - external-secrets
+                - monitoring
+                - falco
+      validate:
+        message: Images must be digest-pinned and originate from ghcr.io/crimson9066.
+        foreach:
+          - list: request.object.spec.containers[]
+            pattern:
+              image: "ghcr.io/crimson9066/*@sha256:*"
+          - list: request.object.spec.initContainers[]
+            pattern:
+              image: "ghcr.io/crimson9066/*@sha256:*"
+    - name: verify-fortress-image
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - argocd
+                - kyverno
+                - external-secrets
+                - monitoring
+                - falco
+      verifyImages:
+        - imageReferences:
+            - ghcr.io/crimson9066/*@sha256:*
+          attestors:
+            - entries:
+                - keyless:
+                    issuer: https://token.actions.githubusercontent.com
+                    rekor:
+                      url: https://rekor.sigstore.dev
+                    subject: repo:crimson9066/Fortress:workflow_ref:crimson9066/Fortress/.github/workflows/publish.yml@refs/heads/main

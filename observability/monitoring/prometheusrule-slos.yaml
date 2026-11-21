@@ -1,0 +1,75 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: fortress-slos
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: fortress
+    owner: crimson9066
+spec:
+  groups:
+    - name: fortress.slo.recording
+      interval: 30s
+      rules:
+        - record: fortress:slo_availability:ratio5m
+          expr: sum(rate(fortress_http_requests_total{status_class!="5xx"}[5m])) / sum(rate(fortress_http_requests_total[5m]))
+        - record: fortress:slo_availability:ratio1h
+          expr: sum(rate(fortress_http_requests_total{status_class!="5xx"}[1h])) / sum(rate(fortress_http_requests_total[1h]))
+        - record: fortress:slo_availability:ratio30m
+          expr: sum(rate(fortress_http_requests_total{status_class!="5xx"}[30m])) / sum(rate(fortress_http_requests_total[30m]))
+        - record: fortress:slo_availability:ratio6h
+          expr: sum(rate(fortress_http_requests_total{status_class!="5xx"}[6h])) / sum(rate(fortress_http_requests_total[6h]))
+        - record: fortress:slo_availability:ratio28d
+          expr: sum(rate(fortress_http_requests_total{status_class!="5xx"}[28d])) / sum(rate(fortress_http_requests_total[28d]))
+        - record: fortress:slo_latency:p95_5m
+          expr: histogram_quantile(0.95, sum by (le) (rate(fortress_http_request_duration_seconds_bucket{route!="/metrics"}[5m])))
+        - record: fortress:slo_latency:p95_30m
+          expr: histogram_quantile(0.95, sum by (le) (rate(fortress_http_request_duration_seconds_bucket{route!="/metrics"}[30m])))
+        - record: fortress:slo_latency:p95_1h
+          expr: histogram_quantile(0.95, sum by (le) (rate(fortress_http_request_duration_seconds_bucket{route!="/metrics"}[1h])))
+        - record: fortress:slo_latency:p95_6h
+          expr: histogram_quantile(0.95, sum by (le) (rate(fortress_http_request_duration_seconds_bucket{route!="/metrics"}[6h])))
+        - record: fortress:slo_latency:p95_28d
+          expr: histogram_quantile(0.95, sum by (le) (rate(fortress_http_request_duration_seconds_bucket{route!="/metrics"}[28d])))
+    - name: fortress.slo.alerts
+      rules:
+        - alert: FortressAvailabilityBurnRate14x
+          expr: (1 - fortress:slo_availability:ratio1h) > (14.4 * 0.005) and (1 - fortress:slo_availability:ratio5m) > (14.4 * 0.005)
+          for: 2m
+          labels:
+            severity: critical
+            slo: availability
+          annotations:
+            summary: Fortress availability error budget is burning rapidly
+            description: Availability is below the 99.5% SLO at the 1-hour and 5-minute windows.
+            runbook_url: https://github.com/crimson9066/Fortress/blob/main/docs/runbooks/fortress-availability-14x.md
+        - alert: FortressAvailabilityBurnRate6x
+          expr: (1 - fortress:slo_availability:ratio6h) > (6 * 0.005) and (1 - fortress:slo_availability:ratio30m) > (6 * 0.005)
+          for: 5m
+          labels:
+            severity: warning
+            slo: availability
+          annotations:
+            summary: Fortress availability error budget is burning
+            description: Availability is below the 99.5% SLO at the 6-hour and 30-minute windows.
+            runbook_url: https://github.com/crimson9066/Fortress/blob/main/docs/runbooks/fortress-availability-6x.md
+        - alert: FortressLatencyBurnRate14x
+          expr: fortress:slo_latency:p95_1h > 0.3 and fortress:slo_latency:p95_5m > 0.3
+          for: 2m
+          labels:
+            severity: critical
+            slo: latency
+          annotations:
+            summary: Fortress latency SLO is burning rapidly
+            description: The p95 latency is above 300 ms at the 1-hour and 5-minute windows.
+            runbook_url: https://github.com/crimson9066/Fortress/blob/main/docs/runbooks/fortress-latency-14x.md
+        - alert: FortressLatencyBurnRate6x
+          expr: fortress:slo_latency:p95_6h > 0.3 and fortress:slo_latency:p95_30m > 0.3
+          for: 5m
+          labels:
+            severity: warning
+            slo: latency
+          annotations:
+            summary: Fortress latency SLO is burning
+            description: The p95 latency is above 300 ms at the 6-hour and 30-minute windows.
+            runbook_url: https://github.com/crimson9066/Fortress/blob/main/docs/runbooks/fortress-latency-6x.md

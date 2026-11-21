@@ -27,3 +27,91 @@ This log records choices that affect security, reproducibility, operations, or p
 - **Decision:** Use Go's standard-library `net/http` and `log/slog`, with `prometheus/client_golang` as the only external application dependency. Keep the item store in memory for this phase.
 - **Alternatives:** Use a web framework; add a database; use a different logging or metrics stack.
 - **Consequences:** The service has a small dependency and attack surface, but data is intentionally ephemeral and the API is not horizontally consistent until a persistence layer is planned and implemented.
+
+## ADR-003: Native S3 state locking with a customer-managed KMS key
+
+- **Status:** Accepted
+- **Context:** Terraform state needs recovery, encryption, transport protection, and locking without introducing an additional state-locking database.
+- **Decision:** Use Terraform 1.17.1's S3 backend `use_lockfile` native locking, an S3 state bucket with versioning and SSE-KMS using a rotating customer-managed key, and a separate encrypted access-log bucket. Bootstrap remains local-state until its outputs are reviewed and the backend is explicitly configured.
+- **Alternatives:** Use the legacy DynamoDB locking table; use an unencrypted or unversioned bucket; use a hosted Terraform backend.
+- **Consequences:** The bootstrap has fewer AWS resources and follows the current Terraform backend behavior, but the backend configuration must be completed manually after bootstrap and the KMS key has a 30-day deletion window.
+
+## ADR-004: One NAT gateway per Availability Zone
+
+- **Status:** Accepted
+- **Context:** Private subnets need controlled outbound access while the VPC module remains reusable for multi-AZ EKS environments.
+- **Decision:** Create one NAT gateway and private route table per selected Availability Zone. Enable VPC flow logs to an encrypted, retained CloudWatch log group and remove all default security-group rules.
+- **Alternatives:** Use one shared NAT gateway to reduce cost; expose private workloads directly; leave the default security-group rules unchanged.
+- **Consequences:** The design is more resilient to an Availability Zone failure and avoids cross-AZ NAT traffic, but NAT gateways incur recurring hourly and data-processing charges. The cost trade-off is documented in `docs/cost.md` during the budget phase.
+
+## ADR-005: Exact GitHub OIDC subjects for plan and apply
+
+- **Status:** Accepted
+- **Context:** Terraform CI must use short-lived AWS credentials without exposing long-lived secrets or allowing arbitrary branches and workflows to assume privileged roles.
+- **Decision:** Create one GitHub OIDC provider and two roles. The plan role accepts only the exact repository pull-request subject. The apply role accepts only the exact protected `production` environment subject and an exact workflow reference on `refs/heads/main`. Both roles have a one-hour maximum session and receive permissions only through explicitly supplied policy ARNs.
+- **Alternatives:** Use access keys; trust the repository broadly; use wildcard branch or subject conditions; attach broad administrator permissions by default.
+- **Consequences:** Fork and branch credentials are constrained by immutable OIDC claims, but callers must explicitly provide the minimum managed policies needed for each Terraform stack.
+
+## ADR-006: EKS API authentication and node hardening
+
+- **Status:** Accepted
+- **Context:** The cluster must avoid legacy `aws-auth`, protect Kubernetes Secrets, restrict API exposure, and prevent pod access to instance metadata credentials.
+- **Decision:** Use EKS API authentication with access entries, encrypt Secrets with a rotating KMS key, enable all control-plane log types, place managed nodes in private subnets, restrict the public API endpoint to caller-supplied CIDRs, install the EKS Pod Identity Agent, and require IMDSv2 with hop limit 1 on nodes.
+- **Alternatives:** Use `aws-auth`; leave Secrets unencrypted; allow `0.0.0.0/0`; use public nodes; permit IMDSv1 or a hop limit of 2.
+- **Consequences:** The cluster has stronger default isolation and auditability, but operators must supply explicit API CIDRs, access entries, and workload IAM associations before use.
+
+## ADR-007: Explicit monthly budget and confirmation-gated AWS helpers
+
+- **Status:** Accepted
+- **Context:** Optional AWS demonstrations can create recurring charges and destructive cleanup must be deliberate.
+- **Decision:** Require a monthly AWS Budget with actual and forecasted email alerts. Provide environment allowlisted `aws-up.sh` and `aws-down.sh` helpers that print the impact and require the exact environment name before invoking Terraform.
+- **Alternatives:** Rely on manual commands with no budget; auto-apply or auto-destroy from CI; accept arbitrary environment names.
+- **Consequences:** Cost and destructive-action friction are visible before use, but the alert email and environment-specific variables must be configured by the operator.
+
+## ADR-008: Cilium as the kind network policy provider
+
+- **Status:** Accepted
+- **Context:** kind's default CNI is suitable for connectivity but does not provide the NetworkPolicy enforcement required by Fortress.
+- **Decision:** Disable kindnet and install the pinned Cilium 1.20.4 chart through its OCI registry. The cluster bootstrap waits for Cilium and all nodes to become ready before continuing.
+- **Alternatives:** Use kindnet with unenforced policy manifests; install Calico; use a cloud-provider CNI.
+- **Consequences:** Local policy behavior is enforceable and close to a production CNI, but cluster setup requires Helm and a Docker environment capable of running Cilium.
+
+## ADR-009: Pinned Argo CD with GitOps application boundaries
+
+- **Status:** Accepted
+- **Context:** GitOps must not expose an unauthenticated UI or allow arbitrary repositories, namespaces, or cluster resources to be deployed.
+- **Decision:** Install Argo CD from the official v3.6.1 manifest URL, disable anonymous and built-in admin access, use a read-only default RBAC role, restrict the Fortress AppProject to this repository and the items namespaces, and expose the UI only through port-forwarding.
+- **Alternatives:** Track the mutable stable manifest; expose the UI with a LoadBalancer; allow cluster-wide application permissions.
+- **Consequences:** The local installation is reproducible and narrowly scoped, but repository authentication must be provisioned out-of-band and an identity provider is required for interactive Argo CD access.
+
+## ADR-010: Kyverno audit-to-enforce rollout
+
+- **Status:** Accepted
+- **Context:** Admission policies can block platform bootstrap if introduced without observing existing resources and policy compatibility.
+- **Decision:** Introduce the Fortress Kyverno policies in Audit mode, inspect PolicyReports and remediate violations, then change `validationFailureAction` to Enforce. The committed policy baseline is Enforce only after that review; system namespaces are excluded from generated default-deny policies because their control-plane and installer traffic is owned by platform components.
+- **Alternatives:** Start in Enforce immediately; leave policies in Audit permanently; exempt all namespaces.
+- **Consequences:** Rollout requires an explicit audit review and evidence, but production admission is fail-closed and exceptions remain visible and scoped.
+
+## ADR-011: External Secrets with provider-specific stores
+
+- **Status:** Accepted
+- **Context:** Workload configuration must not place secret values in Git while remaining reproducible on kind and least-privilege on AWS.
+- **Decision:** Install External Secrets Operator through Argo CD. Kind uses the documented fake provider with a non-secret local placeholder. AWS uses namespace-scoped SecretStores, IRSA/Pod Identity, and a dedicated role restricted to `fortress/{environment}/items` Secrets Manager resources. The application consumes only the generated Secret.
+- **Alternatives:** Commit Kubernetes Secret manifests; use long-lived AWS access keys; use a cluster-wide SecretStore for all workloads.
+- **Consequences:** Secret values stay outside Git and AWS access can be scoped to one path, but the operator and AWS role must be configured before production sync.
+
+## ADR-012: Pin Kyverno to the legacy ClusterPolicy-compatible release
+
+- **Status:** Accepted
+- **Context:** Kyverno v1.20 removes execution of the legacy `kyverno.io/v1` ClusterPolicy API, while the requested policies and CLI fixtures use ClusterPolicies and `verifyImages`.
+- **Decision:** Pin the official Kyverno Helm chart to 3.9.1 (application v1.19.1) and the CLI fixtures to v1.19.1. Upgrade to the newer CEL policy APIs only as a separate reviewed migration.
+- **Alternatives:** Convert every policy to the new CEL APIs in this phase; use the mutable chart or CLI latest release.
+- **Consequences:** The requested ClusterPolicy model remains testable and reproducible, but a future Kyverno upgrade must include a deliberate policy API migration and compatibility review.
+
+## ADR-013: Pinned observability stack and Falco driver
+
+- **Status:** Accepted
+- **Context:** Detection and SLO evidence must be reproducible through GitOps without exposing Grafana credentials or weakening workload isolation.
+- **Decision:** Install kube-prometheus-stack 93.3.0, Falco chart 7.1.0, and Falcosidekick 0.3.5 through Argo CD. Configure Falco to use `modern_ebpf` without automatic fallback, and route events to Alertmanager through Falcosidekick.
+- **Alternatives:** Use mutable chart versions; use node-exporter and privileged monitoring broadly; expose Grafana externally; use Falco kernel-module fallback automatically.
+- **Consequences:** The stack is pinned and auditable, but Falco requires a compatible host kernel and its namespace is an explicit privileged platform exception. Grafana access remains internal and credentials are supplied by External Secrets.
