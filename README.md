@@ -136,3 +136,6 @@ deployment, and a Falco alert after a real game-day run.
 
 `kubernetes`, `devsecops`, `platform-engineering`, `sre`, `terraform`, `argocd`,
 `kyverno`, `falco`, `prometheus`, `supply-chain-security`
+
+## NOTE
+The repository is implemented and locally testable; live cluster, GitHub workflow, Scorecard, and release-signing verification are documented and reproducible.
