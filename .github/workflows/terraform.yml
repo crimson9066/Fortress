@@ -108,7 +108,7 @@ jobs:
           persist-credentials: false
       - name: Run Checkov
         # v12.3139.0
-        uses: bridgecrewio/checkov-action@45edc9d8856b664db2ec251f5f8632361f0a67aa
+        uses: bridgecrewio/checkov-action@b17b606d6ec72bb8ba5721ad5b7e340b80a9fc39
         with:
           directory: infra/terraform
           framework: terraform
